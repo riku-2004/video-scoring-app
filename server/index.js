@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const db = require('./database.js'); // データベースの設定をインポート
 const bcrypt = require('bcrypt');
+const path = require('path');
 // bcryptを使用してパスワードのハッシュ化を行うために必要なモジュールをインポート
 
 const app = express();
@@ -30,10 +31,13 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 app.use(express.json()); // フロントから送られてくるJSONを理解するための設定を追加
+app.use(express.static(path.join(__dirname, '../client/dist'))); // 静的ファイルの提供
 
 app.get('/api/test', (req, res) => {
     res.json({ message: 'Hello from the server!' });
     });
+
+
 
 app.get('/api/videos', (req, res) => {
   const sql = `
@@ -267,6 +271,10 @@ app.get('/api/results', authenticateAdmin, (req, res) => {
 
     res.json(rankedVideos);
   });
+});
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
 
 app.listen(PORT, () => {
