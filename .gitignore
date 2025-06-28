@@ -1,0 +1,23 @@
+# Node.js dependencies
+/node_modules
+/client/node_modules
+/server/node_modules
+
+# Build output folder for React
+/client/dist
+
+# Database file (これはGitに含めないのが一般的です)
+/server/database.db
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables file
+.env
+/client/.env
+
+# OS-generated files
+.DS_Store
+Thumbs.db
