@@ -63,7 +63,7 @@ app.get('/api/videos', (req, res) => {
   });
 });
 // 全ての動画と、その出演者リストを取得するAPI
-app.post('/api/videos', authenticateAdmin, (req, res) => {
+app.post('/api/videos', authenticateAdmin,  async(req, res) => {
   const { id, title, url, cast } = req.body;
   if (!id || !title || !url || !cast) {
     return res.status(400).json({ error: '全てのフィールドは必須です。' });
@@ -102,7 +102,7 @@ app.post('/api/videos', authenticateAdmin, (req, res) => {
   });
 });
 
-app.delete('/api/videos/:id', authenticateAdmin, (req, res) => {
+app.delete('/api/videos/:id', authenticateAdmin, async(req, res) => {
   const { id } = req.params;
   const sql = "DELETE FROM videos WHERE id = ?";
   db.run(sql, id, function(err) {
