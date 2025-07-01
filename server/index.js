@@ -86,21 +86,22 @@ app.get('/api/videos', async (req, res) => {
   }
 });
 
-app.get('/api/rankings/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const result = await db.query("SELECT video_order FROM rankings WHERE user_id = $1", [userId]);
-    const row = result.rows[0];
-    res.json({ videoOrder: row ? row.video_order.split(',') : null });
-  } catch (err) {
-    res.status(500).json({ error: 'データベースエラー' });
-  }
-});
+// ★★★★★ デバッグのため、一旦コメントアウト ★★★★★
+// app.get('/api/rankings/:userId', async (req, res) => {
+//   try {
+//     const { userId } = req.params;
+//     const result = await db.query("SELECT video_order FROM rankings WHERE user_id = $1", [userId]);
+//     const row = result.rows[0];
+//     res.json({ videoOrder: row ? row.video_order.split(',') : null });
+//   } catch (err) {
+//     res.status(500).json({ error: 'データベースエラー' });
+//   }
+// });
 
 app.post('/api/submissions', async (req, res) => {
   try {
     const { userId, videoOrder } = req.body;
-    if (!userId || !videoOrder || videoOrder.length === 0) {
+    if (!userId || !videoOrder || !videoOrder.length === 0) {
       return res.status(400).json({ error: 'ユーザーIDとランキング情報は必須です。' });
     }
     const videoOrderText = videoOrder.join(',');
@@ -140,7 +141,7 @@ app.post('/api/videos', authenticateAdmin, async (req, res) => {
   if (!id || !title || !url || !cast) {
     return res.status(400).json({ error: '全てのフィールドは必須です。' });
   }
-  const client = await db.getClient(); // トランザクションのためにクライアントを取得
+  const client = await db.getClient();
   try {
     await client.query('BEGIN');
     await client.query("INSERT INTO videos (id, title, url) VALUES ($1, $2, $3)", [id, title, url]);
@@ -157,18 +158,19 @@ app.post('/api/videos', authenticateAdmin, async (req, res) => {
   }
 });
 
-app.delete('/api/videos/:id', authenticateAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await db.query("DELETE FROM videos WHERE id = $1", [id]);
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: '指定された動画が見つかりません。' });
-    }
-    res.status(200).json({ message: '動画が正常に削除されました。' });
-  } catch (err) {
-    res.status(500).json({ error: '動画の削除に失敗しました。' });
-  }
-});
+// ★★★★★ デバッグのため、一旦コメントアウト ★★★★★
+// app.delete('/api/videos/:id', authenticateAdmin, async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const result = await db.query("DELETE FROM videos WHERE id = $1", [id]);
+//     if (result.rowCount === 0) {
+//       return res.status(404).json({ error: '指定された動画が見つかりません。' });
+//     }
+//     res.status(200).json({ message: '動画が正常に削除されました。' });
+//   } catch (err) {
+//     res.status(500).json({ error: '動画の削除に失敗しました。' });
+//   }
+// });
 
 app.get('/api/users', authenticateAdmin, async (req, res) => {
   try {
@@ -179,19 +181,20 @@ app.get('/api/users', authenticateAdmin, async (req, res) => {
   }
 });
 
-app.put('/api/users/:id/role', authenticateAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { role } = req.body;
-    if (role !== 'admin' && role !== 'general') {
-      return res.status(400).json({ error: '無効な役割です。' });
-    }
-    await db.query("UPDATE users SET role = $1 WHERE id = $2", [role, id]);
-    res.status(200).json({ message: 'ユーザーの役割が更新されました。' });
-  } catch (err) {
-    res.status(500).json({ error: '役割の更新に失敗しました。' });
-  }
-});
+// ★★★★★ デバッグのため、一旦コメントアウト ★★★★★
+// app.put('/api/users/:id/role', authenticateAdmin, async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { role } = req.body;
+//     if (role !== 'admin' && role !== 'general') {
+//       return res.status(400).json({ error: '無効な役割です。' });
+//     }
+//     await db.query("UPDATE users SET role = $1 WHERE id = $2", [role, id]);
+//     res.status(200).json({ message: 'ユーザーの役割が更新されました。' });
+//   } catch (err) {
+//     res.status(500).json({ error: '役割の更新に失敗しました。' });
+//   }
+// });
 
 app.post('/api/admin/reset', authenticateAdmin, async (req, res) => {
   try {
