@@ -2,6 +2,8 @@
 // server/index.js (最終完成版)
 // ===================================================
 // --- 1. 必要なライブラリのインポート ---
+require('dotenv').config(); // 環境変数の読み込み
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
