@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200px" height="200px" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>マイクと音符のイラスト</title>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        
+        <!-- 背景の円 -->
+        <circle fill="#E0F2F1" cx="50" cy="50" r="48"></circle>
+        
+        <!-- マイクのスタンド部分 -->
+        <path d="M50,85 L50,75" stroke="#455A64" stroke-width="2" stroke-linecap="round"></path>
+        <rect fill="#607D8B" x="40" y="85" width="20" height="5" rx="2.5"></rect>
+        
+        <!-- マイク本体 -->
+        <rect fill="#B0BEC5" x="42" y="30" width="16" height="45" rx="8"></rect>
+        <path d="M42,38 L58,38 M42,48 L58,48 M42,58 L58,58" stroke="#78909C" stroke-width="1.5" stroke-linecap="round"></path>
+        
+        <!-- マイクの上部 -->
+        <path d="M50,12 C56.627417,12 62,17.372583 62,24 L62,30 L38,30 L38,24 C38,17.372583 43.372583,12 50,12 Z" fill="#90A4AE"></path>
+        
+        <!-- 左側の音符 (八分音符) -->
+        <g transform="translate(20, 35) rotate(-15)">
+            <path d="M12,25 L12,5" stroke="#00796B" stroke-width="2" stroke-linecap="round"></path>
+            <circle fill="#00796B" cx="9" cy="25" r="3"></circle>
+            <path d="M12,5 C15,6 18,10 16,15" stroke="#00796B" stroke-width="2" fill="none"></path>
+        </g>
+        
+        <!-- 右側の音符 (十六分音符) -->
+        <g transform="translate(65, 25) rotate(15)">
+            <path d="M10,22 L10,2 M15,22 L15,2 M10,2 L15,4" stroke="#009688" stroke-width="2" stroke-linecap="round"></path>
+            <circle fill="#009688" cx="7" cy="22" r="3"></circle>
+            <circle fill="#009688" cx="12" cy="22" r="3"></circle>
+        </g>
+    </g>
+</svg>
