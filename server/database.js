@@ -58,7 +58,7 @@ const initializeDb = async () => {
         id SERIAL PRIMARY KEY,
         user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         video_order TEXT NOT NULL,
-        submitted_at TIMESTAMMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        submitted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
