@@ -1,8 +1,10 @@
 const { Pool } = require('pg');
+
 // Renderの環境変数からデータベースURLを取得して接続
-export const pool = new Pool({
+const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
+    // RenderのPostgreSQLに接続するために必要な設定
     rejectUnauthorized: false
   }
 });
@@ -57,7 +59,7 @@ const initializeDb = async () => {
         id SERIAL PRIMARY KEY,
         user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         video_order TEXT NOT NULL,
-        submitted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        submitted_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
@@ -66,11 +68,13 @@ const initializeDb = async () => {
   } catch (err) {
     await client.query('ROLLBACK'); // エラーがあれば全て取り消し
     console.error('データベースの初期化に失敗しました。', err);
+    // エラーが発生してもプロセスを止めないように、ここではエラーを再スローしない
   } finally {
     client.release(); // 接続をプールに返す
   }
 };
 
+// 他のファイルから使えるように、query関数とinitializeDb関数を公開する
 module.exports = {
   query: (text, params) => pool.query(text, params),
   initializeDb,
