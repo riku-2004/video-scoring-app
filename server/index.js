@@ -79,23 +79,30 @@ app.post('/api/login', async (req, res) => {
 
 // C. 動画・ランキング関連
 // 全ての動画と、その出演者リストを取得するAPI
+// 全ての動画と、その出演者リストを取得するAPI (PostgreSQL修正版)
 app.get('/api/videos', async (req, res) => {
-  // SQLを修正して、member_user_idを取得するように変更
+  // PostgreSQLで正しく動作するSTRING_AGGを使用
   const sql = `
     SELECT
-      v.id, v.title, v.url,
-      (SELECT json_agg(vc.member_user_id) FROM video_cast vc WHERE vc.video_id = v.id) as "castUserIds"
+      v.id,
+      v.title,
+      v.url,
+      STRING_AGG(CAST(vc.member_user_id AS TEXT), ',') as "castUserIds"
     FROM videos v
-    GROUP BY v.id`;
-
+    LEFT JOIN video_cast vc ON v.id = vc.video_id
+    GROUP BY v.id
+    ORDER BY v.id ASC
+  `;
   try {
     const result = await db.query(sql);
     const videos = result.rows.map(row => ({
       ...row,
-      cast: row.castUserIds || [] // castというキー名で、IDの配列を返す
+      // castUserIdsがnullの場合は空配列、そうでない場合は数値の配列に変換
+      cast: row.castUserIds ? row.castUserIds.split(',').map(Number) : []
     }));
     res.json(videos);
   } catch (err) {
+    console.error("動画リストの取得でサーバーエラー:", err);
     res.status(500).json({ error: err.message });
   }
 });
