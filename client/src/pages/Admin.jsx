@@ -55,8 +55,7 @@ function Admin() {
   const handleDeleteVideo = async (videoId) => {
     if (!confirm(`${videoId}を本当に削除しますか？`)) return;
     try {
-      const apiUrl = import.meta.env.VITE_API_URL;
-      const response = await fetch(`${apiUrl}/api/videos/${videoId}`, {
+      const response = await fetch(`/api/videos/${videoId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

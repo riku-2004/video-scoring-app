@@ -118,8 +118,7 @@ function Dashboard() {
     }
     try {
       const videoOrder = videos.map(v => v.id);
-      const apiUrl = import.meta.env.VITE_API_URL;
-      const response = await fetch(`${apiUrl}/api/submissions`, { // ★ 送信先APIを変更
+      const response = await fetch(`/api/submissions`, { // ★ 送信先APIを変更
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

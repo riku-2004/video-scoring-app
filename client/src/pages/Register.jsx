@@ -13,8 +13,7 @@ function Register() {
         e.preventDefault();
         setMessage('');
         try {
-            const apiUrl = import.meta.env.VITE_API_URL;
-            const response = await fetch(`${apiUrl}/api/register`, {
+            const response = await fetch(`/api/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password, name }),

@@ -18,8 +18,7 @@ function Results() {
   useEffect(() => {
     const fetchResults = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL;
-        const response = await fetch(`${apiUrl}/api/results`, {
+        const response = await fetch(`/api/results`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
