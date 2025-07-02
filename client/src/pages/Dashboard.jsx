@@ -46,7 +46,7 @@ function Dashboard() {
 
         // 1. 自分が出演していない動画だけに絞り込む
         const viewableVideos = allVideosData.filter(
-          video => !video.cast.includes(currentUser.name)
+          video => !video.cast.includes(currentUser.id)
         );
 
         // 2. 絞り込んだリストを、保存された順序に基づいて並べ替える
@@ -78,25 +78,7 @@ function Dashboard() {
     fetchData();
   }, [currentUser, navigate]);
 
-      
-    // const fetchRanking = async () => {
-    //   try {
-    //     const response = await fetch(`http://localhost:3001/api/rankings/${currentUser.id}`);
-    //     const data = await response.json();
-    //     if (data.videoOrder) {
-    //       const orderedVideos = data.videoOrder.map(id =>
-    //         sampleVideos.find(video => video.id === id)).filter(Boolean);
-    //       setVideos(orderedVideos);
-    //     } else {
-    //       setVideos(sampleVideos);
-    //     }
-    //   } catch (error) {
-    //     console.error('ランキングの取得に失敗しました:', error);
-    //     setVideos(sampleVideos); // エラー時はサンプルデータを使用
-    //   }
-    // };
-
-    // fetchRanking();
+    
   // ドラッグが終了した時に呼ばれる関数
   const handleDragEnd = (event) => {
     const { active, over } = event;

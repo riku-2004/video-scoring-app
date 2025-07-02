@@ -1,5 +1,5 @@
 const { Pool } = require('pg');
-
+export const pool = require('./pool'); // プールの設定を別ファイルに分けることも可能
 // Renderの環境変数からデータベースURLを取得して接続
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -38,8 +38,8 @@ const initializeDb = async () => {
     await client.query(`
       CREATE TABLE IF NOT EXISTS video_cast (
         video_id TEXT NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
-        member_name TEXT NOT NULL,
-        PRIMARY KEY (video_id, member_name)
+        member_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        PRIMARY KEY (video_id, member_user_id)
       );
     `);
 

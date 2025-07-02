@@ -25,7 +25,7 @@ function Login() {
             } else {
                 setMessage(`ログインエラー： ${data.error}`);
             }
-        } catch (error) {
+        } catch (err) {
             setMessage('通信エラーが発生しました。');
         }
     };

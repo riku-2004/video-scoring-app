@@ -11,6 +11,8 @@ const db = require('./database.js');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
+import { pool } from './database.js'; // データベース接続プールのインポート
+
 // --- 2. アプリケーションの基本設定 ---
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -77,15 +79,23 @@ app.post('/api/login', async (req, res) => {
 });
 
 // C. 動画・ランキング関連
+// 全ての動画と、その出演者リストを取得するAPI
 app.get('/api/videos', async (req, res) => {
+  // SQLを修正して、member_user_idを取得するように変更
+  const sql = `
+    SELECT
+      v.id, v.title, v.url,
+      (SELECT json_agg(vc.member_user_id) FROM video_cast vc WHERE vc.video_id = v.id) as "castUserIds"
+    FROM videos v
+    GROUP BY v.id`;
+
   try {
-    const sql = `
-      SELECT v.id, v.title, v.url, COALESCE(json_agg(vc.member_name) FILTER (WHERE vc.member_name IS NOT NULL), '[]') as cast
-      FROM videos v
-      LEFT JOIN video_cast vc ON v.id = vc.video_id
-      GROUP BY v.id`;
     const result = await db.query(sql);
-    res.json(result.rows);
+    const videos = result.rows.map(row => ({
+      ...row,
+      cast: row.castUserIds || [] // castというキー名で、IDの配列を返す
+    }));
+    res.json(videos);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -139,19 +149,25 @@ app.get('/api/results', authenticateAdmin, async (req, res) => {
     res.status(500).json({ error: 'データベースエラー' });
   }
 });
-
+// 新しい動画を追加するAPI (管理者専用)
 app.post('/api/videos', authenticateAdmin, async (req, res) => {
   const { id, title, url, cast } = req.body;
-  if (!id || !title || !url || !cast) {
+  if (!id || !title || !url || !Array.isArray(cast)) {
     return res.status(400).json({ error: '全てのフィールドは必須です。' });
   }
-  const client = await db.getClient();
+  const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query("INSERT INTO videos (id, title, url) VALUES ($1, $2, $3)", [id, title, url]);
-    for (const memberName of cast) {
-      await client.query("INSERT INTO video_cast (video_id, member_name) VALUES ($1, $2)", [id, memberName]);
+
+    const videoSql = "INSERT INTO videos (id, title, url) VALUES ($1, $2, $3)";
+    await client.query(videoSql, [id, title, url]);
+
+    // cast配列をループして、各ユーザーIDをvideo_castテーブルに挿入
+    const castSql = "INSERT INTO video_cast (video_id, member_user_id) VALUES ($1, $2)";
+    for (const userId of cast) {
+      await client.query(castSql, [id, userId]);
     }
+
     await client.query('COMMIT');
     res.status(201).json({ message: '動画が正常に追加されました。' });
   } catch (err) {

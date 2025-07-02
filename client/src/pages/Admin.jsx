@@ -3,7 +3,9 @@ import { useAuth } from '../context/AuthContext';
 
 function Admin() {
   const [videos, setVideos] = useState([]);
-  const [newVideo, setNewVideo] = useState({ id: '', title: '', url: '', cast: '' });
+  const [users, setUsers] = useState([]);
+  const [selectedCastIds, setSelectedCastIds] = useState([]);
+  const [newVideo, setNewVideo] = useState({ id: '', title: '', url: ''});
   const { token } = useAuth();
 
   // 動画リストを取得する関数
@@ -11,6 +13,14 @@ function Admin() {
     const response = await fetch('http://localhost:3001/api/videos');
     const data = await response.json();
     setVideos(data);
+  };
+
+  const handleCastChange = (userId) => {
+    setSelectedCastIds(prevSelectedIds =>
+      prevSelectedIds.includes(userId)
+        ? prevSelectedIds.filter(id => id !== userId)
+        : [...prevSelectedIds, userId]
+    );
   };
 
   // 初期表示時に動画リストを取得
@@ -29,18 +39,18 @@ function Admin() {
     e.preventDefault();
     try {
       // castはカンマ区切りの文字列を配列に変換
-      const castArray = newVideo.cast.split(',').map(name => name.trim());
-      const response = await fetch('http://localhost:3001/api/videos', {
+      const response = await fetch('/api/videos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ ...newVideo, cast: castArray }),
+        body: JSON.stringify({ ...newVideo, cast: selectedCastIds }),
       });
       if (response.ok) {
         alert('動画を追加しました。');
-        setNewVideo({ id: '', title: '', url: '', cast: '' }); // フォームをリセット
+        setNewVideo({ id: '', title: '', url: '' }); // フォームをリセット
+        setSelectedCastIds([]); // 選択した出演者をリセット
         fetchVideos(); // リストを再取得して更新
       } else {
         const data = await response.json();
@@ -82,7 +92,22 @@ function Admin() {
           <input name="id" value={newVideo.id} onChange={handleInputChange} placeholder="動画ID (例: v5)" required />
           <input name="title" value={newVideo.title} onChange={handleInputChange} placeholder="動画タイトル" required />
           <input name="url" value={newVideo.url} onChange={handleInputChange} placeholder="動画URL" required />
-          <input name="cast" value={newVideo.cast} onChange={handleInputChange} placeholder="出演者 (カンマ区切り。例: 山田,渡辺)" required />
+          <div>
+            <lavel>出演者を選択</lavel>
+            <div style={{ border: '1px solid #ccc', padding: '10px', maxHeight: '150px', overflowY: 'auto' }}>
+              {users.map(user => (
+                <div key={user.id}>
+                  <input
+                    type="checkbox"
+                    id={`cast-${user.id}`}
+                    checked={selectedCastIds.includes(user.id)}
+                    onChange={() => handleCastChange(user.id)}
+                  />
+                  <label htmlFor={`cast-${user.id}`}>{user.name} ({user.email})</label>
+                </div>
+              ))}
+            </div>
+          </div>
           <button type="submit">追加</button>
         </form>
       </div>
