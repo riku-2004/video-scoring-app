@@ -1,7 +1,6 @@
 const { Pool } = require('pg');
-export const pool = require('./pool'); // プールの設定を別ファイルに分けることも可能
 // Renderの環境変数からデータベースURLを取得して接続
-const pool = new Pool({
+export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
     rejectUnauthorized: false
