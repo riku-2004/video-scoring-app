@@ -11,7 +11,6 @@ const db = require('./database.js');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-import { pool } from './database.js'; // データベース接続プールのインポート
 
 // --- 2. アプリケーションの基本設定 ---
 const app = express();
