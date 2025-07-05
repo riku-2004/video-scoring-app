@@ -41,17 +41,44 @@ const authenticateAdmin = (req, res, next) => {
 };
 
 // --- 5. APIエンドポイント（受付窓口）の定義 ---
+// A. メンバー関連
+
+// 全メンバーのリストを取得
+app.get('/api/members', async (req, res) => {
+  try {
+    const result = await db.query('SELECT * FROM members ORDER BY name ASC');
+    res.json(result.rows);
+  } catch (err) { res.status(500).json({ error: 'メンバーリストの取得に失敗しました。' }); }
+});
+
+// 新しいメンバーを名簿に追加
+app.post('/api/members', authenticateAdmin, async (req, res) => {
+  try {
+    const { name } = req.body;
+    const result = await db.query('INSERT INTO members (name) VALUES ($1) RETURNING *', [name]);
+    res.status(201).json(result.rows[0]);
+  } catch (err) { res.status(400).json({ error: 'メンバーの追加に失敗しました。名前が重複している可能性があります。' }); }
+});
+
+// メンバーを名簿から削除
+app.delete('/api/members/:id', authenticateAdmin, async (req, res) => {
+  try {
+    await db.query('DELETE FROM members WHERE id = $1', [req.params.id]);
+    res.status(200).json({ message: 'メンバーを削除しました。' });
+  } catch (err) { res.status(500).json({ error: 'メンバーの削除に失敗しました。' }); }
+});
+
 
 // B. ユーザー認証関連
 app.post('/api/register', async (req, res) => {
   try {
-    const { email, password, name } = req.body;
-    if (!email || !password || !name) {
-      return res.status(400).json({ error: 'メールアドレス、パスワード、名前は必須です。' });
+    const { email, password, memberID } = req.body;
+    if (!email || !password || !memberID) {
+      return res.status(400).json({ error: 'メールアドレス、パスワード、メンバーIDは必須です。' });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const sql = 'INSERT INTO users (email, password, name) VALUES ($1, $2, $3) RETURNING id';
-    const result = await db.query(sql, [email, hashedPassword, name]);
+    const sql = 'INSERT INTO users (email, password, member_id) VALUES ($1, $2, $3) RETURNING id';
+    const result = await db.query(sql, [email, hashedPassword, memberID]);
     res.status(201).json({ message: 'ユーザー登録が成功しました。', userId: result.rows[0].id });
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ error: 'このメールアドレスは既に使用されています。' });
@@ -69,7 +96,7 @@ app.post('/api/login', async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ error: 'メールアドレスまたはパスワードが正しくありません。' });
 
-    const payload = { id: user.id, email: user.email, role: user.role, name: user.name };
+    const payload = { id: user.id, email: user.email, role: user.role, memberId: user.member_id };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
     res.json({ message: 'ログインに成功しました。', token, user: payload });
   } catch (err) {
@@ -83,11 +110,7 @@ app.post('/api/login', async (req, res) => {
 app.get('/api/videos', async (req, res) => {
   // PostgreSQLで正しく動作するSTRING_AGGを使用
   const sql = `
-    SELECT
-      v.id,
-      v.title,
-      v.url,
-      STRING_AGG(CAST(vc.member_user_id AS TEXT), ',') as "castUserIds"
+    SELECT v.*, COALESCE(json_agg(vc.member_id) FILTER (WHERE vc.member_id IS NOT NULL), '[]') as cast
     FROM videos v
     LEFT JOIN video_cast vc ON v.id = vc.video_id
     GROUP BY v.id
@@ -97,7 +120,7 @@ app.get('/api/videos', async (req, res) => {
     const result = await db.query(sql);
     const videos = result.rows.map(row => ({
       ...row,
-      // castUserIdsがnullの場合は空配列、そうでない場合は数値の配列に変換
+      // castがnullの場合は空配列、そうでない場合は数値の配列に変換
       cast: row.castUserIds ? row.castUserIds.split(',').map(Number) : []
     }));
     res.json(videos);
@@ -168,10 +191,10 @@ app.post('/api/videos', authenticateAdmin, async (req, res) => {
     const videoSql = "INSERT INTO videos (id, title, url) VALUES ($1, $2, $3)";
     await client.query(videoSql, [id, title, url]);
 
-    // cast配列をループして、各ユーザーIDをvideo_castテーブルに挿入
-    const castSql = "INSERT INTO video_cast (video_id, member_user_id) VALUES ($1, $2)";
-    for (const userId of cast) {
-      await client.query(castSql, [id, userId]);
+    // cast配列をループして、各メンバーIDをvideo_castテーブルに挿入
+    const castSql = "INSERT INTO video_cast (video_id, member_id) VALUES ($1, $2)";
+    for (const memberId of cast) {
+      await client.query(castSql, [id, memberId]);
     }
 
     await client.query('COMMIT');

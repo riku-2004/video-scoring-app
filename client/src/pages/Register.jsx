@@ -1,22 +1,42 @@
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import {useNavigate} from 'react-router-dom';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';    
 
 function Register() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [members, setMembers] = useState([]); // ★サークル員名簿を保存するstate
+    const [selectedMemberId, setSelectedMemberId] = useState(''); // ★選択されたメンバーIDを保存するstate
     const [message, setMessage] = useState('');
     const [name, setName] = useState('');
     const navigate = useNavigate();
     
+     // ★ページ表示時に、サーバーからサークル員名簿を取得する
+    useEffect(() => {
+        const fetchMembers = async () => {
+        try {
+            const response = await fetch('/api/members'); // authenticateAdminを外したので、誰でもアクセス可能
+            const data = await response.json();
+            setMembers(data);
+        } catch (err) {
+            console.error("メンバー名簿の取得に失敗", err);
+        }
+        };
+        fetchMembers();
+    }, []);
+
     const handleRegister = async (e) => {
         e.preventDefault();
+         if (!selectedMemberId) {
+            setMessage('名簿からあなたの名前を選択してください。');
+            return;
+        }
         setMessage('');
         try {
             const response = await fetch(`/api/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password, name }),
+                body: JSON.stringify({ email, password, memberId: selectedMemberId }),
             });
         const data = await response.json();
         if (response.ok) {
@@ -33,19 +53,28 @@ function Register() {
     };
     
     return (
-        <div className = "form-container">
-        <h2>新規登録</h2>
-        <form onSubmit={handleRegister}>
-            <div>
-              <label>名前:</label>
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
-            </div>
-            <div>
-            <label>メールアドレス:</label>
-            <input
-                type="email"
-                id="email"
-                value={email}
+    <div className="form-container">
+      <h1>ユーザー登録</h1>
+      <form onSubmit={handleRegister}>
+        {/* ▼▼▼ 名前の手入力欄を、名簿からの選択式(プルダウン)に変更 ▼▼▼ */}
+        <div>
+          <label>あなたの名前を選択してください:</label>
+          <select value={selectedMemberId} onChange={(e) => setSelectedMemberId(e.target.value)} required>
+            <option value="">-- 名前を選択 --</option>
+            {members.map(member => (
+              <option key={member.id} value={member.id}>
+                {member.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        {/* ▲▲▲ ここまで変更 ▲▲▲ */}
+        <div>
+          <label>メールアドレス:</label>
+          <input
+            type="email"
+            id="email"
+            value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
             />

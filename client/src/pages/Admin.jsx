@@ -1,20 +1,49 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 function Admin() {
   const [videos, setVideos] = useState([]);
-  const [users, setUsers] = useState([]);
+  // const [users, setUsers] = useState([]);
+  const [members, setMembers] = useState([]); // ★メンバー名簿用のstate
   const [selectedCastIds, setSelectedCastIds] = useState([]);
   const [newVideo, setNewVideo] = useState({ id: '', title: '', url: ''});
+  const [newMemberName, setNewMemberName] = useState(''); // ★新メンバーの名前用state
   const { token } = useAuth();
 
   // 動画リストを取得する関数
-  const fetchVideos = async () => {
+  const fetchVideos = useCallback(async () => {
     const response = await fetch('http://localhost:3001/api/videos');
     const data = await response.json();
     setVideos(data);
-  };
+  }, []);
 
+  const fetchMembers = useCallback(async () => {
+    // このAPIは管理者認証が不要なので、tokenなしでOK
+    const response = await fetch('/api/members');
+    const data = await response.json();
+    setMembers(data);
+  }, []);
+  
+  useEffect(() => {
+    // ページ表示時に必要なデータを全て取得
+    fetchMembers();
+    // fetchVideos(); // fetchUsers()の中で動画も取得するので不要かも
+    // fetchUsers();
+  }, [fetchMembers]); // fetchUsersなどを追加
+
+  // ★メンバーを名簿に追加する処理
+  const handleAddMember = async (e) => {
+    e.preventDefault();
+    try {
+      await fetch('/api/members', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ name: newMemberName })
+      });
+      setNewMemberName('');
+      fetchMembers(); // リストを更新
+    } catch (err) { alert('メンバーの追加に失敗しました。'); }
+  };
   const handleCastChange = (userId) => {
     setSelectedCastIds(prevSelectedIds =>
       prevSelectedIds.includes(userId)
@@ -23,16 +52,22 @@ function Admin() {
     );
   };
 
+  // ★メンバーを名簿から削除する処理
+  const handleDeleteMember = async (memberId) => {
+    if (!confirm('このメンバーを名簿から削除しますか？')) return;
+    try {
+      await fetch(`/api/members/${memberId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      fetchMembers(); // リストを更新
+    } catch (err) { alert('メンバーの削除に失敗しました。'); }
+  };
+
   // 初期表示時に動画リストを取得
   useEffect(() => {
     fetchVideos();
   }, []);
-
-  // フォームの入力値をハンドル
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewVideo({ ...newVideo, [name]: value });
-  };
 
   // 動画を追加する処理
   const handleCreateVideo = async (e) => {
@@ -45,7 +80,7 @@ function Admin() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ ...newVideo, cast: selectedCastIds }),
+        //body: JSON.stringify({ ...newVideo, cast: selectedCastIds }),
       });
       if (response.ok) {
         alert('動画を追加しました。');
@@ -83,32 +118,44 @@ function Admin() {
 
   return (
     <div>
-      <h1>管理者ページ：動画管理</h1>
+      <h1>管理者ページ</h1>
 
-      {/* 新規動画追加フォーム */}
+      {/* ▼▼▼ 新しいセクション：メンバー名簿管理 ▼▼▼ */}
+      <div className="form-container">
+        <h2>サークル員名簿の管理</h2>
+        <form onSubmit={handleAddMember}>
+          <input value={newMemberName} onChange={(e) => setNewMemberName(e.target.value)} placeholder="新しいメンバーの名前" required />
+          <button type="submit">名簿に追加</button>
+        </form>
+        <ul style={{listStyle: 'none', padding: 0}}>
+          {members.map(member => (
+            <li key={member.id} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px'}}>
+              {member.name}
+              <button onClick={() => handleDeleteMember(member.id)} style={{backgroundColor: '#dc3545', width: 'auto', padding: '2px 8px'}}>削除</button>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <hr />
+      
+      {/* 動画追加フォームの出演者選択部分を修正 */}
       <div className="form-container">
         <h2>新しい動画を追加</h2>
         <form onSubmit={handleCreateVideo}>
-          <input name="id" value={newVideo.id} onChange={handleInputChange} placeholder="動画ID (例: v5)" required />
-          <input name="title" value={newVideo.title} onChange={handleInputChange} placeholder="動画タイトル" required />
-          <input name="url" value={newVideo.url} onChange={handleInputChange} placeholder="動画URL" required />
+          {/* ... (id, title, url の input) ... */}
           <div>
-            <lavel>出演者を選択</lavel>
+            <label>出演者を選択 (名簿から):</label>
             <div style={{ border: '1px solid #ccc', padding: '10px', maxHeight: '150px', overflowY: 'auto' }}>
-              {users.map(user => (
-                <div key={user.id}>
-                  <input
-                    type="checkbox"
-                    id={`cast-${user.id}`}
-                    checked={selectedCastIds.includes(user.id)}
-                    onChange={() => handleCastChange(user.id)}
-                  />
-                  <label htmlFor={`cast-${user.id}`}>{user.name} ({user.email})</label>
+              {members.map(member => ( // ★ usersではなくmembersからリストを作成
+                <div key={member.id}>
+                  <input type="checkbox" id={`cast-${member.id}`} checked={selectedCastIds.includes(member.id)} onChange={() => handleCastChange(member.id)} />
+                  <label htmlFor={`cast-${member.id}`}>{member.name}</label>
                 </div>
               ))}
             </div>
           </div>
-          <button type="submit">追加</button>
+          <button type="submit">動画を追加</button>
         </form>
       </div>
 

@@ -15,23 +15,22 @@ const initializeDb = async () => {
   try {
     await client.query('BEGIN'); // トランザクション開始
 
-    // usersテーブル (idはSERIAL PRIMARY KEYに)
+    // ★★★ 新しいテーブル: サークル員名簿 ★★★
     await client.query(`
+      CREATE TABLE IF NOT EXISTS members (
+        id SERIAL PRIMARY KEY,
+        name TEXT UNIQUE NOT NULL
+      );
+    `);
+
+    // videosテーブル member_idを追加
+     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT 'general',
-        name TEXT NOT NULL
-      );
-    `);
-
-    // videosテーブル
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS videos (
-        id TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
-        url TEXT NOT NULL
+        member_id INTEGER UNIQUE REFERENCES members(id)
       );
     `);
 
@@ -39,8 +38,8 @@ const initializeDb = async () => {
     await client.query(`
       CREATE TABLE IF NOT EXISTS video_cast (
         video_id TEXT NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
-        member_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        PRIMARY KEY (video_id, member_user_id)
+        member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+        PRIMARY KEY (video_id, member_id)
       );
     `);
 
