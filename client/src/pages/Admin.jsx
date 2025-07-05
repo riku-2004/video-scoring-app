@@ -154,7 +154,32 @@ function Admin() {
                 </div>
               ))}
             </div>
+            <p>選択中の出演者: {selectedCastIds.map(id => members.find(m => m.id === id)?.name).join(', ')}</p>
           </div>
+          <div>
+            <label>動画ID:</label>
+            <input type="text" value={newVideo.id} onChange={(e) => setNewVideo({
+              ...newVideo,
+              id: e.target.value
+            })} required />
+          </div>
+          <div>
+            <label>動画タイトル:</label>
+            <input type="text" value={newVideo.title} onChange={(e) =>
+              setNewVideo({
+                ...newVideo,
+                title: e.target.value
+              })} required />
+          </div>
+          <div>
+            <label>動画URL:</label>
+            <input type="text" value={newVideo.url} onChange={(e) =>
+              setNewVideo({
+                ...newVideo,
+                url: e.target.value
+              })} required />
+          </div>
+          {/* ▼▼▼ ここまで変更 ▼▼▼ */}
           <button type="submit">動画を追加</button>
         </form>
       </div>
