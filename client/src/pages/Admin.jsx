@@ -72,6 +72,8 @@ function Admin() {
   // 動画を追加する処理
   const handleCreateVideo = async (e) => {
     e.preventDefault();
+    const payload = { ...newVideo, cast: selectedCastIds };
+    console.log('【フロントエンド】サーバーにこのデータを送信します:', payload);
     try {
       // castはカンマ区切りの文字列を配列に変換
       const response = await fetch('/api/videos', {
