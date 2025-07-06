@@ -27,6 +27,10 @@ function Register() {
 
     const handleRegister = async (e) => {
         e.preventDefault();
+        console.log('--- 登録ボタンが押されました ---');
+        console.log('選択されたメンバーID:', selectedMemberId);
+        console.log('入力されたEmail:', email);
+        console.log('入力されたPassword:', password);
          if (!selectedMemberId) {
             setMessage('名簿からあなたの名前を選択してください。');
             return;
