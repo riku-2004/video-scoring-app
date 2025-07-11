@@ -74,7 +74,9 @@ app.post('/api/register', async (req, res) => {
   try {
     const { email, password, memberID } = req.body;
     if (!email || !password || !memberID) {
-      return res.status(400).json({ error: 'メールアドレス、パスワード、メンバーIDは必須です。' });
+      return res.status(400).json({ error: 'メールアドレス、パスワード、メンバーIDは必須です。' },
+        console.error('ユーザー登録エラー:', req.body)
+      );
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const sql = 'INSERT INTO users (email, password, member_id) VALUES ($1, $2, $3) RETURNING id';
@@ -181,6 +183,7 @@ app.get('/api/results', authenticateAdmin, async (req, res) => {
 // 新しい動画を追加するAPI (管理者専用)
 app.post('/api/videos', authenticateAdmin, async (req, res) => {
   const { id, title, url, cast } = req.body;
+  console.log('【サーバー】フロントエンドからこのデータを受け取りました:', req.body);
   if (!id || !title || !url || !Array.isArray(cast)) {
     return res.status(400).json({ error: '全てのフィールドは必須です。' });
   }
