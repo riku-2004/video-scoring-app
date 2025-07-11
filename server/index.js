@@ -92,14 +92,22 @@ app.post('/api/register', async (req, res) => {
 app.post('/api/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    const sql = `
+      SELECT u.*, m.name 
+      FROM users u 
+      JOIN members m ON u.member_id = m.id 
+      WHERE u.email = $1
+    `;
+    const result = await db.query(sql, [email]);
     const user = result.rows[0];
-    if (!user) return res.status(400).json({ error: 'メールアドレスまたはパスワードが正しくありません。' });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(400).json({ error: 'メールアドレスまたはパスワードが正しくありません。' });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ error: 'メールアドレスまたはパスワードが正しくありません。' });
 
-    const payload = { id: user.id, email: user.email, role: user.role, memberId: user.member_id };
+    const payload = { id: user.id, email: user.email, role: user.role, name: user.name, memberId: user.member_id };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
     res.json({ message: 'ログインに成功しました。', token, user: payload });
   } catch (err) {

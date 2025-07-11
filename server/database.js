@@ -1,21 +1,18 @@
 const { Pool } = require('pg');
 
-// Renderの環境変数からデータベースURLを取得して接続
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
-    // RenderのPostgreSQLに接続するために必要な設定
     rejectUnauthorized: false
   }
 });
 
-// アプリケーション起動時に、全てのテーブルが存在するか確認・作成する関数
 const initializeDb = async () => {
   const client = await pool.connect();
   try {
-    await client.query('BEGIN'); // トランザクション開始
+    await client.query('BEGIN');
 
-    // ★★★ 新しいテーブル: サークル員名簿 ★★★
+    // membersテーブル
     await client.query(`
       CREATE TABLE IF NOT EXISTS members (
         id SERIAL PRIMARY KEY,
@@ -23,18 +20,27 @@ const initializeDb = async () => {
       );
     `);
 
-    // videosテーブル member_idを追加
-     await client.query(`
+    // usersテーブル (name列をなくし、member_idを参照)
+    await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT 'general',
-        member_id INTEGER UNIQUE REFERENCES members(id)
+        member_id INTEGER UNIQUE REFERENCES members(id) ON DELETE CASCADE
       );
     `);
 
-    // video_castテーブル
+    // videosテーブル
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS videos (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        url TEXT NOT NULL
+      );
+    `);
+
+    // video_castテーブル (member_idを参照)
     await client.query(`
       CREATE TABLE IF NOT EXISTS video_cast (
         video_id TEXT NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
@@ -62,18 +68,16 @@ const initializeDb = async () => {
       );
     `);
 
-    await client.query('COMMIT'); // 全て成功したら確定
-    console.log('✅ データベースのテーブル準備ができました。');
+    await client.query('COMMIT');
+    console.log('✅ データベース(最終設計)のテーブル準備ができました。');
   } catch (err) {
-    await client.query('ROLLBACK'); // エラーがあれば全て取り消し
+    await client.query('ROLLBACK');
     console.error('データベースの初期化に失敗しました。', err);
-    // エラーが発生してもプロセスを止めないように、ここではエラーを再スローしない
   } finally {
-    client.release(); // 接続をプールに返す
+    client.release();
   }
 };
 
-// 他のファイルから使えるように、query関数とinitializeDb関数を公開する
 module.exports = {
   query: (text, params) => pool.query(text, params),
   initializeDb,
