@@ -72,15 +72,15 @@ app.delete('/api/members/:id', authenticateAdmin, async (req, res) => {
 // B. ユーザー認証関連
 app.post('/api/register', async (req, res) => {
   try {
-    const { email, password, memberID } = req.body;
-    if (!email || !password || !memberID) {
+    const { email, password, memberId } = req.body;
+    if (!email || !password || !memberId) {
       return res.status(400).json({ error: 'メールアドレス、パスワード、メンバーIDは必須です。' },
         console.error('ユーザー登録エラー:', req.body)
       );
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const sql = 'INSERT INTO users (email, password, member_id) VALUES ($1, $2, $3) RETURNING id';
-    const result = await db.query(sql, [email, hashedPassword, memberID]);
+    const result = await db.query(sql, [email, hashedPassword, memberId]);
     res.status(201).json({ message: 'ユーザー登録が成功しました。', userId: result.rows[0].id });
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ error: 'このメールアドレスは既に使用されています。' });
