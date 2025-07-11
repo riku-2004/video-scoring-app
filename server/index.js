@@ -83,6 +83,7 @@ app.post('/api/register', async (req, res) => {
     const result = await db.query(sql, [email, hashedPassword, memberId]);
     res.status(201).json({ message: 'ユーザー登録が成功しました。', userId: result.rows[0].id });
   } catch (err) {
+    console.error('ユーザー登録エラー:', err);
     if (err.code === '23505') return res.status(400).json({ error: 'このメールアドレスは既に使用されています。' });
     res.status(500).json({ error: 'サーバーエラーが発生しました。' });
   }
